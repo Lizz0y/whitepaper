@@ -39,10 +39,10 @@
 \usepackage{tkz-graph}
 \usetikzlibrary{arrows,decorations.pathmorphing,automata,positioning,backgrounds,fit,shapes.symbols,chains,intersections}
 
-\newtheorem{definition}{Definition}[section]
-\newtheorem{theorem}{Theorem}[section]
+\newtheorem{definition}{定义}[section]
+\newtheorem{theorem}{定理}[section]
 \newtheorem{lemma}{Lemma}
-\newtheorem{proof}{Proof} [section]
+\newtheorem{proof}{证明} [section]
 
 
 
@@ -167,8 +167,8 @@ For the above reasons, purely blockchain-based exchanges have limitations that m
 \section{Loopring Protocol\label{sec:loopring_protocol}}
 Loopring is not a DEX, but a modular protocol for building DEXs on multiple blockchains. We disassemble the component parts of a traditional exchange and offer a set of public smart contracts and decentralized actors in its place. The roles in the network include wallets, relays, liquidity-sharing consortium blockchains, order book browsers, Ring-Miners, and asset tokenization services. Before defining each, we should first understand Loopring orders. 
 
-\subsection{订单环\label{sec:order_ring}}
-在路印协议中,订单由单向数据模型表示(UDOM)。UDOM把每个订单用一个代币交换请求来表示 amountS/amountB(分别为卖和买的数量),而不单纯是买和卖的请求。我们知道每个订单必定是两种货币之间的交换(例如ETH换成USD)，所以这个协议最大的魅力在于,它可以把多个订单混合在一个交易环路中进行撮合。与传统在两个币种间，即一个交易对的买卖两个方向间完成撮合不同，路印在交易环路中最多可以使用16个订单,促使交易整体具有更大的流动性和更小的价差。
+\subsection{交易环路\label{sec:order_ring}}
+在路印协议中,每个订单通过单向数据模型表示(UDOM)。UDOM使用代币交换请求来表示每个订单，即\verb|amountS|/\verb|amountB|(分别为卖和买的数量),而非独立的买和卖的请求。因为每个订单可以简单的看成是两种货币之间的交换(例如ETH换成USD)，这个协议最大的魅力在于它可以把多个订单混合在一个交易环路中进行撮合。与传统在两个币种间，即一个交易对的买卖两个方向间完成撮合不同，路印在一个交易环路中最多可以包含16个订单,促使交易整体具有更大的流动性和更小的价差。
 
 \begin{center}
 \begin{figurehere}
@@ -225,10 +225,10 @@ Loopring is not a DEX, but a modular protocol for building DEXs on multiple bloc
   \node [order, below of=order2, xshift=3.5cm] (order3) 
  {%
  \begin{tabular}{l}
-  \textbf{ORDER\#3}\\
-  \textbf{owner: Z}\\
-  \textbf{amountS: 100C}\\
-  \textbf{amountB: 160A}
+  \textbf{订单\#3}\\
+  \textbf{发起者: Z}\\
+  \textbf{卖出: 100C}\\
+  \textbf{买入: 160A}
  \end{tabular}
  };
  
@@ -238,32 +238,39 @@ Loopring is not a DEX, but a modular protocol for building DEXs on multiple bloc
 
 \end{tikzpicture}
 
-\caption{An order-ring of 3 orders}
+\caption{图1:一个三边交易的撮合}
 \label{fig:ring}
 \end{figurehere}
 \end{center}
 
+上图展示了拥有三个订单的交易环路。每个订单要卖出的代币 (\verb|tokenS|)正好是另一个订单要买的代币种类(\verb|tokenB|)。It creates a loop that allows each order to exchange their desired tokens without requiring an opposing order for its pair. 传统的在一对币种间的交易依旧可以执行,我们可以把它看成路印交易环路的一种特殊情况。
 
-The above figure shows an order-ring of 3 orders. Each order's token to sell (\verb|tokenS|) is another order's token to buy (\verb|tokenB|). It creates a loop that allows each order to exchange their desired tokens without requiring an opposing order for its pair. Traditional order pair trades can, of course, still be executed, in what is essentially a special case of an order-ring. 
 
-\begin{definition}[order-ring] Let $C_{0}$, $C_{1}$, $\cdots$, $C_{n-1}$ be $n$ different tokens, $O_{0\rightarrow 1}$, $\cdots$, $O_{i\rightarrow i\oplus 1}$, $\cdots$, $O_{n-1 \rightarrow 0}$ be $n$ orders. Those orders can form a order-ring for trading:
-$$O_{0\rightarrow 1} \rightarrow \cdots \rightarrow O_{i\rightarrow i\oplus 1} \rightarrow \cdots \rightarrow O_{n-1\rightarrow 0} \text{, }$$
-where $n$ is the length of the order-ring, and $i\oplus 1 \equiv i+1 \mod n$.
+\begin{definition}[交易环路] 如果有$n$个币种$C_{0}$、$C_{1}$、$\cdots$、$C_{n-1}$，和$n$个订单：$O_{0\rightarrow 1}$， $\cdots$， $O_{i\rightarrow i\oplus 1}$， $\cdots$， $O_{n-1 \rightarrow 0}$，其中，$i\oplus 1 \equiv i+1 \mod n$。
+那么这些订单可以组成跨n个币种的交易环路：
+
+$O_{0\rightarrow 1} \rightarrow \cdots \rightarrow O_{i\rightarrow i\oplus 1} \rightarrow \cdots \rightarrow O_{n-1\rightarrow 0}$ ，其中$n$为环路的长度，并且$i\oplus 1 \equiv i+1 \mod n$.
 \end{definition}
 
-An order-ring is valid when all component transactions can be executed at an exchange rate equal to or better than the original rate specified implicitly by the user. To verify order-ring validity, Loopring protocol smart contracts must receive order-rings from ring-miners where the product of the original exchange rates of all orders is equal to or greater than 1.
 
-Let's assume Alice and Bob want to trade their token \verb|A| and \verb|B|. Alice has 15 token \verb|A| and she wants 4 token \verb|B| for them; Bob has 10 token \verb|B|  and he wants 30 token \verb|A| for them.
 
-Who is buying and who is selling? This depends only on the asset we fix to give price quotations. If token \verb|A| is the reference, then Alice is buying token \verb|B| for the price of ${15 \over 4} = 3.75$\verb|A|, while Bob is selling 10 token \verb|B| for the price of ${30 \over 10} = 3.00$\verb|A|. In the case of fixing token \verb|B| as reference, we say that Alice is selling 15 token \verb|A| for the price of ${4\over 15}=0.26666667$\verb|B| and Bob is buying 10 token \verb|A| for the price of ${10 \over 30}=0.33333334$\verb|B|. Hence, who's the buyer or seller is arbitrary.
+我们定义，当一个交易环路中所有的订单最终的兑换率都大于等于用户原本希望成交的兑换率,那么这个交易环路就是有效的。为了验证交易环路最终的有效性，路印协议的智能合约接收到来自环路矿工的所有订单的兑换率乘积必须大于等于1
 
-In the first situation Alice is willing to pay a higher price ($3.75$\verb|A|) than the price Bob is selling his tokens for ($3.00$\verb|A|), while in the second situation Bob is willing to pay a higher price ($0.33333334$\verb|B|) than the price Alice is selling her tokens for ($0.26666667$\verb|B|). It is clear that a trade is possible whenever the buyer is willing to pay an equal or higher price than the seller's price.
+现在,我们假设ALice跟Bob想要交易他们的代币(\verb|A|和\verb|B|)。Alice有15个\verb|A|代币，她想从B那换来4个代币\verb|B|；BOb有10个\verb|B|代币，她想从A换得30个代币\verb|A|。
+
+那么，究竟谁是买方，谁是卖方？这取决于我们以哪种代币资产作为基础来进行价格计算。如果以代币\verb|A|作为参考，那Alice就会以\frac{15}{4}  =3.75\verb|A|的价格买\verb|B|，bob就会以价格{30\over 3} =3\verb|A|来卖出10个B。如果以B作为参考，那么Alice就会以{4\over 15}=0.26666667\verb|B|的价格卖出\verb|A|，Bob就以{10\over 30}=0.333334\verb|B|的价格购买\verb|A|。所以在路印协议中,买方和卖方的角色是任意(无所谓的)。
+
+在第一种情况下，Bob以3.00\verb|A|的价格卖出他的币，而Alice愿意以更高的价格(3.75\verb|A|)买代币\verb|B|。而在第二种情况下Bob也愿意以比Alice提供的0.2666667\verb|B|更高的价格0.333334\verb|B|来购买\verb|B|。所以，显而易见，只要买方愿意提供比卖方希望成交的更高的价格，那么交易就是有可能成立的。
+
 
 \begin{equation}
 {{15\over 4} \over {30\over 10}} = {{10\over 30} \over {4\over 15}}={15 \over 4} \cdot {10 \over 30} = 1.25 > 1
 \end{equation}
 
-Thus, for a set of $n$ orders to be able to be filled, fully or partially, we need to know if the product of each one of the exchange rates as buy orders results in a number greater or equal to 1. If so, all the $n$ orders can be either partially, or totally filled \cite{supersymmetry}.
+
+因此，对于由n个订单组成的交易集合可能全部成交，也可能部分成交，我们需要知道每个订单最终的兑换率的乘积是否大于或等于1。如果确实大于或等于1，那么这n个订单就可以全部或部分订单。
+
+现在我们引入一个第三方Charlie，假设Alice想要卖出$x_1$个 \verb|A|和$y_1$个\verb|B|，Bob想要卖出$x_2$个B和y2个C，Charlie想要卖出x3个C和ye个A，那么首先，必须的token都存在于这个环路中，并且只要。。。 那么这个交易就是可能有效的
 
 If we introduce a third counterparty, Charlie, such that  Alice wants to give $x_1$ token \verb|A| and receive $y_1$ token \verb|B|, Bob wants to give $x_2$ token \verb|B| and receive $y_2$ token \verb|C|, and Charlie wants to give $x_3$ token \verb|C| and receive $y_3$ token \verb|A|. The necessary tokens are present, and the trade is possible if:
 
@@ -271,30 +278,36 @@ If we introduce a third counterparty, Charlie, such that  Alice wants to give $x
 {{x1 \cdot x_2 \cdot x_3 \over y_1 \cdot y_2 \cdot y_3} \geq 1}
 \end{equation}
 
-
-See section \ref{anatomy} for more details about Loopring's orders.
-
+在7.1章节\ref{anatomy}我们会看到更多关于路印订单的细节。
 
 
-\section{Ecosystem Participants\label{sec:ecosystem}}
-The following ecosystem participants jointly provide all functionalities a centralized exchange has to offer. 
+
+
+\section{生态角色\label{sec:ecosystem}}
+
+下面要介绍的生态系统中的各个角色都是一个中心化的交易所必须提供的基础设施。
+
 
 \begin{itemize}
 
-\item \textbf{Wallets}: A common wallet service or interface that gives users access to their tokens and a way to send orders to the Loopring network. Wallets will be incentivized to produce orders by sharing fees with ring-miners (see section \ref{sec:token}). With the belief that the future of trading will take place within the safety of individual user's wallets, connecting these liquidity pools through our protocol is paramount.
+\item \textbf{钱包}:一个为用户提供代币资产存储和向路印网络发送订单请求的通用钱包服务或接口。与环路矿工共享交易费用可以激励钱包生产订单。 (见章节\ref{sec:token})。我们相信,在未来交易和个人用户钱包的安全性息息相关，因此通过路印协议来连接这些流动性资金池也是至关重要的。
 
 \item \textbf{Consortium Liquidity Sharing Blockchain/Relay-Mesh}: A relay-mesh network for order \& liquidity sharing. When nodes run Loopring relay software, they are able to join an existing network and share liquidity with other relays over a consortium blockchain. The consortium blockchain we are building as a first implementation has near real time order sharing (1-2 second blocks), and trims old history to allow for faster download by new nodes. Notably, relays need not join this consortium; they can act alone and not share liquidity with others, or, they can start and manage their own liquidity sharing network.
 
-\item \textbf{Relays/Ring-Miners}: Relays are nodes that receive orders from wallets or the relay-mesh, maintain public order books and trade history, and optionally broadcast orders to other relays (via any arbitrary off-chain medium) and/or relay-mesh nodes. Ring-mining is a feature -- not a requirement -- of relays. It is computationally heavy and is done completely off-chain. We call relays with the ring-mining feature turned on \enquote{Ring-Miners}, who produce order-rings by stitching together disparate orders. Relays are free in (1) how they choose to communicate with one another, (2) how they build their order books, and (3) how they mine order-rings (mining algorithms).
+\item \textbf{中继/环路矿工}:中继作为从钱包或中继-网格节点接收订单的节点，在本地维护建立一个订单簿与交易历史，同时选择性地向其他中继广播订单（通过其他任意的链下媒介）或者中继-网格节点。环路撮合并不是中继必需的特性，过大的计算量促使它在链下进行交易。如果一个中继拥有环路撮合特性，那它就变成了一个\enquote{环路矿工}。环路矿工可以通过拼接独立的订单来产生交易环路。中继不会被太多的规则约束，它们可以自由的: 1）任意选择他们与其他节点进行交流的方式 2）在本地建立订单簿的方式 
+3）决定如何进行环路撮合(撮合算法)
 
-\item \textbf{Loopring Protocol Smart Contracts (LPSC)}: A set of public and free smart contracts that checks order-rings received from ring-miners, trustlessly settles and transfers tokens on behalf of users, incentivizes ring-miners and wallets with fees, and emits events. Relays/order browsers listen to these events to keep their order books and trade history up to date. See appendix \ref{app:protocol_ethereum} for details.
+
+\item \textbf{路印协议智能合约 (LPSC)}: 路印协议中的智能合约是完全开放免费的。它们会计算并确认来自交易环路的每个订单的状态，并代表用户对交易进行清算转账。同时,智能合约会使用交易费用激励环路矿工和钱包,并发送一系列的事件。中继/订单浏览器会监听这些事件来同步更新本地存储的订单簿与交易历史。详见附录\ref{app:protocol_ethereum}。
+
+
 
 \item \textbf{Asset Tokenization Services (ATS)}: A bridge between assets that cannot be directly traded on Loopring. They are centralized services run by trustworthy companies or organizations. Users deposit assets (real, fiat or tokens from other chains) and get tokens issued, which can be redeemed for the deposit in the future. Loopring is not a cross-chain exchange protocol (until a suitable solution exists), but ATS enable trading of ERC20 tokens \cite{ERC20} with physical assets as well as assets on other blockchains. 
 
 \end{itemize}
 
 
-\section{Exchange Process\label{sec:process}}
+\section{下单和撮合流程\label{sec:process}}
 
 
 
